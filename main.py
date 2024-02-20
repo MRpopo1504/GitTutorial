@@ -1,75 +1,111 @@
-import datetime
-from urllib import response
+import uuid
+from datetime import datetime
 import requests
 
-courses = ["PLN",]
-body = requests.get('https://api.nbp.pl/api/exchangerates/tables/a')
-response = body.json()
+faktury = []
+platnosci = []
+kursy_wymiany = {}  # Słownik do przechowywania kursów wymiany walut
 
-for rate in response[0]['rates']:
-    courses.append((rate['code']))
+def pobierz_kwote(komunikat):
+    while True:
+        kwota = input(komunikat)
+        try:
+            return int(kwota)
+        except ValueError:
+            print("Nieprawidłowe dane! Proszę podać poprawną liczbę.")
 
+def pobierz_walute():
+    while True:
+        waluta = input("Waluta (PLN, USD, EUR, GBP): ").upper()
+        if waluta in ["PLN", "USD", "EUR", "GBP"]:
+            return waluta
+        else:
+            print("Nieprawidłowa waluta! Proszę wybrać spośród PLN, USD, EUR, GBP.")
 
-print("Podaj dane dotyczący faktury")
-def biling_input_amount():
+def pobierz_date(komunikat):
+    while True:
+        data_str = input(komunikat + " (dd-mm-rrrr): ")
+        try:
+            return datetime.strptime(data_str, "%d-%m-%Y").date()
+        except ValueError:
+            print("Nieprawidłowy format daty! Proszę użyć dd-mm-rrrr.")
+
+def get_exchange_rate(currency):
+    if currency not in kursy_wymiany:
+        url = f"http://api.nbp.pl/api/exchangerates/rates/a/{currency}/"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            exchange_rate = data["rates"][0]["mid"]
+            kursy_wymiany[currency] = exchange_rate
+            return exchange_rate
+        else:
+            print(f"Request failed with status code: {response.status_code}")
+            return None
+    else:
+        return kursy_wymiany[currency]
+
+def dodaj_fakture():
+    print("Dodaj Nową Fakturę")
+    kwota = pobierz_kwote("Podaj kwotę:")
+    data = pobierz_date("Podaj Datę")
+    waluta = pobierz_walute()
+    do_zaplaty = kwota
+    id_faktury = str(uuid.uuid4())
     
-    print("Podaj kwotę")
-    raw_input = input()
-    try:
-        amount = float(raw_input)
-        print("Wprowadzona liczba jako float:", amount)
-    except ValueError:
-        print("nieprawidłowa kwota")
-        biling_input_amount()
+    faktury.append({
+        "id": id_faktury,
+        "kwota": kwota,
+        "data": data,
+        "waluta": waluta,
+        "do_zaplaty": do_zaplaty
+    })
+    print("Faktura została dodana pomyślnie.")
 
-biling_input_amount
+def dodaj_platnosc():
+    print("Dodaj Nową Płatność")
+    id_faktury = input("Podaj ID Faktury: ")
+    faktura = next((f for f in faktury if f["id"] == id_faktury), None)
+    if faktura:
+        kwota = pobierz_kwote("Podaj Kwotę Płatności:")
+        waluta = pobierz_walute()
+        data_platnosci = datetime.now().date()
 
-    ##########
-def biling_input_course():
-    
-    print("Podaj kurs")
-    raw_input = input()
-    try:
-        course = float(raw_input)
-        print("Wprowadzona liczba jako float:", course)
-    except ValueError:
-        print("nieprawidłowa kwota")
-        biling_input_course()
+        if waluta != faktura["waluta"]:
+            kurs_wymiany = get_exchange_rate(faktura["waluta"]) / get_exchange_rate(waluta)
+            kwota = round(kwota * kurs_wymiany, 2)
 
-biling_input_course()
+        platnosci.append({
+            "id_faktury": id_faktury,
+            "kwota": kwota,
+            "waluta": waluta,
+            "data_platnosci": data_platnosci
+        })
+        faktura["do_zaplaty"] -= kwota
+        print("Płatność została dodana pomyślnie.")
+    else:
+        print("Nie znaleziono faktury o podanym ID.")
 
-#####
+# Reszta kodu tutaj
 
-def biling_input_date():
-    
-    day = int()
-    month = int()
-    year = int()
+# Pętla główna programu
+while True:
+    print("Co chcesz zrobić?")
+    print("1. Dodaj nową fakturę")
+    print("2. Dodaj nową płatność")
+    print("3. Wyjdź z programu")
+    wybor = input("Twój wybór: ")
 
-    print("Podaj rok, następnie miesiąc, następnie dzień")
-    raw_input = input()
-    try:
-        day = int(raw_input)
-    except ValueError:
-        print("nieprawidłowa dane")
-        biling_input_date()
+    if wybor == "1":
+        dodaj_fakture()
+    elif wybor == "2":
+        dodaj_platnosc()
+    elif wybor == "3":
+        print("Dziękujemy. Do widzenia!")
+        break
+    else:
+        print("Nieprawidłowy wybór. Proszę wybrać 1, 2 lub 3.")
 
-    raw_input = input()
-    try:
-        month = int(raw_input)
-    except ValueError:
-        print("nieprawidłowa dane")
-        biling_input_date()
-    raw_input = input()
-    try:
-        year = int(raw_input)
-    except ValueError:
-        print("nieprawidłowa dane")
-        biling_input_date()
-    date = datetime.datetime(year, month, year)
-    print(date)
-
-biling_input_date()
 
 
 
