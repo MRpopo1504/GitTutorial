@@ -111,56 +111,6 @@ while True:
     print("Co chcesz zrobić?")
     print("1. Dodaj nową fakturę")
     print("2. Dodaj nową płatność")
-    print("3. Wyjdź z programu")
-    wybor = input("Twój wybór: ")
-
-
-def dodaj_platnosc():
-    print("Dodaj Nową Płatność")
-    id_faktury = input("Podaj ID Faktury: ")
-    faktura = next((f for f in faktury if f["id"] == id_faktury), None)
-    if faktura:
-        kwota = pobierz_kwote("Podaj Kwotę Płatności:")
-        waluta = pobierz_walute()
-        data_platnosci = datetime.now().date()
-
-        if waluta != faktura["waluta"]:
-            kurs_wymiany = get_exchange_rate(faktura["waluta"]) / get_exchange_rate(waluta)
-            kwota = round(kwota * kurs_wymiany, 2)
-
-        platnosci.append({
-            "id_faktury": id_faktury,
-            "kwota": kwota,
-            "waluta": waluta,
-            "data_platnosci": data_platnosci
-        })
-        faktura["do_zaplaty"] -= kwota
-        print("Płatność została dodana pomyślnie.")
-    else:
-        print("Nie znaleziono faktury o podanym ID.")
-
-while True:
-    print("Co chcesz zrobić?")
-    print("1. Dodaj nową fakturę")
-    print("2. Dodaj nową płatność")
-    print("3. Wyjdź z programu")
-    wybor = input("Twój wybór: ")
-
-
-    if wybor == "1":
-        dodaj_fakture()
-    elif wybor == "2":
-        dodaj_platnosc()
-    elif wybor == "3":
-        print("Dziękujemy. Do widzenia!")
-        break
-    else:
-        print("Nieprawidłowy wybór. Proszę wybrać 1, 2 lub 3.")
-
-while True:
-    print("Co chcesz zrobić?")
-    print("1. Dodaj nową fakturę")
-    print("2. Dodaj nową płatność")
     print("3. Sprawdź fakturę")
     print("4. Zapisz dane faktur do pliku")
     print("5. Wyjdź z programu")
